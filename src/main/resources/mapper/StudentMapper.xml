@@ -1,0 +1,149 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ecjtu.dao.IStudentDAO">
+    <resultMap type="com.ecjtu.entity.Student"
+               id="BaseMap">
+        <!--主键-->
+        <id column="sid" property="id"/>
+        <result column="sname" property="name"/>
+        <!--column 表字段，property 实体类属性-->
+        <result column="sex" property="sex"/>
+        <result column="age" property="age"/>
+        <result column="birthday" property="birtday"/>
+        <result column="password" property="password"/>
+        <association property="clazz" javaType="com.ecjtu.entity.Clazz">
+            <id column="cid" property="id"/>
+            <result column="cname" property="name"/>
+        </association>
+
+        <collection property="courseList" ofType="com.ecjtu.entity.Course">
+            <id column="c_id" property="id"/>
+            <result column="c_name" property="name"/>
+        </collection>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name,birthday,sex,password
+    </sql>
+
+    <select id="findCourse" resultMap="BaseMap">
+        SELECT
+	s.id as sid,
+	s.name as sname,
+	c.id as c_id,
+	c.name as c_name
+from student s,courses c,stu_course sc
+where s.id = sc.student_id and c.id = sc.course_id
+    </select>
+
+    <select id="selectview" resultMap="BaseMap">
+        select * from vw_student
+    </select>
+
+    <select id="selectClazzByStudent" resultMap="BaseMap" parameterType="String">
+      select
+	s.id as id,
+	s.name as name,
+	c.id as c_id,
+	c.name as c_name
+from clazz c,student s
+where s.clazz_id = c.id
+and s.id = #{id};
+    </select>
+
+    <!--无分页全查-->
+    <select id="findAll" resultMap="BaseMap">
+        select * from student
+    </select>
+
+    <!--根据姓名查找-->
+    <select id="findByName" resultType="com.ecjtu.entity.Student"
+        parameterType="java.lang.String">
+        select * from student where name = #{name}
+    </select>
+
+    <!--查询,以对象集合返回-->
+    <select id="getMe" parameterType="java.lang.String" resultType="com.ecjtu.entity.Student">
+        select * from student where id = #{id,jdbcType=VARCHAR}
+    </select>
+
+    <!--查询，以Map返回-->
+    <select id="findForMap" parameterType="java.util.Map" resultType="java.util.Map">
+        select * from student
+        <where>
+            <trim prefix="" suffixOverrides="or">
+                <if test="name!=null">
+                    name like '%{name}%' or
+                </if>
+            </trim>
+        </where>
+        order by id asc
+    </select>
+
+    <!--登录查找-->
+    <select id="selectStudent" resultType="com.ecjtu.entity.Student"
+        parameterType="com.ecjtu.entity.Student">
+        SELECT * from student where name = #{name}
+        and password = #{password}
+    </select>
+
+    <!--返回查找条数-->
+    <select id="getRowsCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+        select count(1) as total from student
+        <where>
+            <if test="name!=null">
+                name like '%${name}%'
+            </if>
+        </where>
+    </select>
+
+    <!--分页查找-->
+    <select id="findByPage" parameterType="java.util.Map" resultType="java.util.Map">
+        select
+        <include refid="Base_Column_List"/>
+        from student
+        <where>
+            <if test="name!=null">
+                name like '%${name}%'
+            </if>
+        </where>
+        order by id ASC
+        <if test="start !=0 or limit!=0">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <!--单个对象删除-->
+    <delete id="delete" parameterType="java.lang.String">
+        DELETE from student where id = #{id,jdbcType=VARCHAR}
+    </delete>
+
+    <!--单个对象新增-->
+    <insert id="insert" parameterType="com.ecjtu.entity.Student">
+        insert into student (id, name)
+        values (#{id,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR})
+    </insert>
+
+    <!--单个对象更新-->
+    <update id="update" parameterType="com.ecjtu.entity.Student">
+        update student
+        <set>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="sex !=null">
+                sex = #{sex,jdbcType=VARCHAR},
+            </if>
+            <!--注意下面这个，birtday是Student类的属性，birthday是表字段-->
+            <if test="birtday !=null">
+                birthday = #{birtday,jdbcType=TIMESTAMP},
+            </if>
+            <if test="password !=null">
+                password = #{password,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=VARCHAR}
+    </update>
+</mapper>
